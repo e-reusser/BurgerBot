@@ -80,20 +80,21 @@ def findItems(screen, images, order, sizes):
         loc = numpy.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             j = 0
+            foundSize = "1x.jpg"
             for size in sizeImages:
                 sizeRes = cv2.matchTemplate(screen, size, cv2.TM_CCOEFF_NORMED)
                 sizeLoc = numpy.where(sizeRes >= SIZE_THRESHOLD)
                 zipSizes = zip(*sizeLoc[::-1])
                 for sizePt in zipSizes:
                     if (checkRange(pt, sizePt)):
-                        sizes.append(sizeNames[j])
+                        foundSize = sizeNames[j]
                         break
                 j += 1
             if (("Cheese" in menuFileNames[i]) and not(cheeseCheck)):
                 cheeseCheck = True
-                order.append(menuFileNames[i])
+                order.append([menuFileNames[i], foundSize])
             elif ("Cheese" not in menuFileNames[i]):
-                order.append(menuFileNames[i])
+                order.append([menuFileNames[i], foundSize])
             break
         i += 1
 
@@ -102,9 +103,9 @@ def displayOrder(order, sizes):
     i = 0
     for item in order:
         try:
-            print("Item: " + format(item) + " Size: " + format(sizes[i]))
+            print("Item: " + format(item[0]) + " Size: " + format(item[1]))
         except:
-            print("Item: " + format(item) + " Size: No Size")
+            print("No Item Found")
         i += 1
 
 status = 0
@@ -116,17 +117,24 @@ while True:
     sizes = []
     findItems(screen, images, order, sizes)
     displayOrder(order, sizes)
-    if (("Patty.png" in order or "Veggie.png" in order) and (status == 0)):
+    foundType = 0
+    for item in order:
+        if ("Patty.png" in item or "Veggie.png" in item):
+            foundType = 1
+        elif ("Ring.png" in item or "Sticks.png" in item or "Fry.png" in item):
+            foundType = 2
+        elif ("Drink.png" in item or "Juice.png" in item or "Shake.png" in item):
+            foundType = 3
+    if ((foundType == 1) and (status == 0)):
         bottomBun = imageToButton['bottomBun']
         topBun = imageToButton['topBun']
         sides = imageToButton['Sides']
         click(bottomBun['x'], bottomBun['y'])
         time.sleep(BUTTON_DELAY)
-        i = 0
         for item in order:
-            button = imageToButton[item]
+            button = imageToButton[item[0]]
             try:
-                if (sizes[i] == "x2.png"):
+                if (item[1] == "x2.png"):
                     click(button['x'], button['y'], count=2)
                 else:
                     click(button['x'], button['y'])
@@ -134,33 +142,32 @@ while True:
                 # Default to 1
                 click(button['x'], button['y'])
             time.sleep(BUTTON_DELAY)
-            i += 1
         click(topBun['x'], topBun['y'])
         time.sleep(BUTTON_DELAY)
         click(sides['x'], sides['y'])
         status = 1
         drinkCheck = 0
-    elif (("Ring.png" in order or "Sticks.png" in order or "Fry.png" in order) and status == 1):
-        button = imageToButton[order[0]]
+    elif ((foundType == 2) and status == 1):
+        button = imageToButton[order[0][0]]
         drink = imageToButton['Drink']
         click(button['x'], button['y'])
         time.sleep(BUTTON_DELAY)
-        size = imageToButton[sizes[0]]
+        size = imageToButton[order[0][1]]
         click(size['x'], size['y'])
         time.sleep(BUTTON_DELAY)
         click(drink['x'], drink['y'])
         status = 2
-    elif (("Drink.png" in order or "Juice.png" in order or "Shake.png" in order) and status == 2):
-        button = imageToButton[order[0]]
+    elif ((foundType == 3) and status == 2):
+        button = imageToButton[order[0][0]]
         done = imageToButton['Done']
         click(button['x'], button['y'])
         time.sleep(BUTTON_DELAY)
-        size = imageToButton[sizes[0]]
+        size = imageToButton[order[0][1]]
         click(size['x'], size['y'])
         time.sleep(BUTTON_DELAY)
         click(done['x'], done['y'])
         status = 0
-    elif (not("Drink.png" in order or "Juice.png" in order or "Shake.png" in order) and status == 2):
+    elif ((foundType == 0) and status == 2):
         drinkCheck += 1
         done = imageToButton['Done']
         if (drinkCheck > 2):
