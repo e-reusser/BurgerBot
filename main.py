@@ -11,6 +11,7 @@ import yaml
 FRAME_COORDS = [530, 200, 1400, 450]
 ITEM_THRESHOLD = .859
 SIZE_THRESHOLD = .925
+CHEESE_THRESHOLD = .8
 BUTTON_DELAY = 0.05
 FRAME_DELAY = 0.5
 
@@ -72,7 +73,11 @@ def findItems(screen, images, order, sizes):
     cheeseCheck = False
     for image in images:
         res = cv2.matchTemplate(screen, image, cv2.TM_CCOEFF_NORMED)
-        loc = numpy.where(res >= ITEM_THRESHOLD)
+        if ("Cheese" in menuFileNames[i]):
+            threshold = CHEESE_THRESHOLD
+        else:
+            threshold = ITEM_THRESHOLD
+        loc = numpy.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             j = 0
             for size in sizeImages:
@@ -84,10 +89,10 @@ def findItems(screen, images, order, sizes):
                         sizes.append(sizeNames[j])
                         break
                 j += 1
-            if ((menuFileNames[i] == "Cheese.png" or menuFileNames[i] == "Cheese1.png" or menuFileNames[i] == "Cheese2.png") and not(cheeseCheck)):
+            if (("Cheese" in menuFileNames[i]) and not(cheeseCheck)):
                 cheeseCheck = True
                 order.append(menuFileNames[i])
-            elif (not(menuFileNames[i] == "Cheese.png" or menuFileNames[i] == "Cheese1.png" or menuFileNames[i] == "Cheese2.png")):
+            elif ("Cheese" not in menuFileNames[i]):
                 order.append(menuFileNames[i])
             break
         i += 1
