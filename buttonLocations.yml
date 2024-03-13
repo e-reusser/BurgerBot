@@ -1,0 +1,55 @@
+buttons:
+  ingredients:
+    bottomBun:
+      x: 1674
+      y: 741
+    lettuce:
+      x: 1674
+      y: 676
+    tomato:
+      x: 1674
+      y: 602
+    patty:
+      x: 1627
+      y: 535
+    veggie:
+      x: 1713
+      y: 531
+    cheese:
+      x: 1674
+      y: 472
+    onion:
+      x: 1674
+      y: 402
+    topBun:
+      x: 1674
+      y: 331
+  menu:
+    sides:
+      x: 1871
+      y: 477
+    drink:
+      x: 1871
+      y: 599
+    done:
+      x: 1865
+      y: 705
+  secondary:
+    top:
+      x: 1602
+      y: 415
+    middle:
+      x: 1602
+      y: 538
+    bottom:
+      x: 1602
+      y: 660
+    small:
+      x: 1738
+      y: 414
+    medium:
+      x: 1738
+      y: 541
+    large:
+      x: 1738
+      y: 660

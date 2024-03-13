@@ -66,7 +66,8 @@ def queryMousePosition():
 
 
 
-
+# Modified click function to work with the game's anti-automation protections
+# Uses autoit which draws a line between point A and B and traverses the cursor before clicking
 def click(x, y, *args, **kwargs):
     count = kwargs.get("count", 1)
     # convert to ctypes pixels

@@ -4,65 +4,51 @@ from PIL import ImageGrab
 from directKeys import click
 import cv2
 import os
+import yaml
 
-# Frame coordinates and thresholds
-frame_coords = [530, 200, 1400, 450]
-itemThreshold = .859 #.859 or .812
-sizeThreshold = .925
-buttonDelay = 0.05
-frameDelay = 0.5
+# Frame coordinates, thresholds, and delays
+# These will typically vary based on machine
+FRAME_COORDS = [530, 200, 1400, 450]
+ITEM_THRESHOLD = .859
+SIZE_THRESHOLD = .925
+BUTTON_DELAY = 0.05
+FRAME_DELAY = 0.5
 
-# Coordinates of ingredients
-bottomBun = [1674, 741]
-lettuce = [1674, 676]
-tomato = [1674, 602]
-patty = [1627, 535]
-veggie = [1713, 531]
-cheese = [1674, 472]
-onion = [1674, 402]
-topBun = [1674, 331]
-
-# Menu buttons
-sides = [1871, 477]
-drink = [1871, 599]
-done = [1865, 705]
-
-# Side / Drink buttons
-top = [1602, 415]
-middle = [1602, 538]
-bottom = [1602, 660]
-small = [1738, 414]
-medium = [1738, 541]
-large = [1738, 660]
+with open('buttonLocations.yml') as f:
+    buttonMap = yaml.safe_load(f)
 
 imageToButton = {
-    "Cheese.png": cheese,
-    "Cheese1.png": cheese,
-    "Cheese2.png": cheese,
-    "Drink.png": top,
-    "Fry.png": top,
-    "Juice.png": middle,
-    "Lettuce.png": lettuce,
-    "Onion.png": onion,
-    "Patty.png": patty,
-    "Ring.png": bottom,
-    "Sticks.png": middle,
-    "Tomato.png": tomato,
-    "Veggie.png": veggie,
-    "Shake.png": bottom,
-    "Small.png": small,
-    "Medium.png": medium,
-    "Large.png": large
+    "Cheese.png": buttonMap['buttons']['ingredients']['cheese'],
+    "Cheese1.png": buttonMap['buttons']['ingredients']['cheese'],
+    "Cheese2.png": buttonMap['buttons']['ingredients']['cheese'],
+    "Drink.png": buttonMap['buttons']['secondary']['top'],
+    "Fry.png": buttonMap['buttons']['secondary']['top'],
+    "Juice.png": buttonMap['buttons']['secondary']['middle'],
+    "Lettuce.png": buttonMap['buttons']['ingredients']['lettuce'],
+    "Onion.png": buttonMap['buttons']['ingredients']['onion'],
+    "Patty.png": buttonMap['buttons']['ingredients']['patty'],
+    "Ring.png": buttonMap['buttons']['secondary']['bottom'],
+    "Sticks.png": buttonMap['buttons']['secondary']['middle'],
+    "Tomato.png": buttonMap['buttons']['ingredients']['tomato'],
+    "Veggie.png": buttonMap['buttons']['ingredients']['veggie'],
+    "Shake.png": buttonMap['buttons']['secondary']['bottom'],
+    "Small.png": buttonMap['buttons']['secondary']['small'],
+    "Medium.png": buttonMap['buttons']['secondary']['medium'],
+    "Large.png": buttonMap['buttons']['secondary']['large'],
+    "Sides": buttonMap['buttons']['menu']['sides'],
+    "Drink": buttonMap['buttons']['menu']['drink'],
+    "Done": buttonMap['buttons']['menu']['done'],
+    "bottomBun": buttonMap['buttons']['ingredients']['bottomBun'],
+    "topBun": buttonMap['buttons']['ingredients']['topBun']
 }
 
-directory = 'images'
 images = []
 menuFileNames = []
 menuFileCount = 0
-for filename in os.listdir(directory):
-    f = os.path.join(directory, filename)
+for filename in os.listdir('images'):
+    f = os.path.join('images', filename)
     if os.path.isfile(f):
-        images.append(cv2.imread(os.path.join(directory, filename), cv2.IMREAD_GRAYSCALE))
+        images.append(cv2.imread(os.path.join('images', filename), cv2.IMREAD_GRAYSCALE))
         menuFileNames.append(filename)
         menuFileCount += 1
 print("Loaded " + format(menuFileCount) + " menu items.")
@@ -86,12 +72,12 @@ def findItems(screen, images, order, sizes):
     cheeseCheck = False
     for image in images:
         res = cv2.matchTemplate(screen, image, cv2.TM_CCOEFF_NORMED)
-        loc = numpy.where(res >= itemThreshold)
+        loc = numpy.where(res >= ITEM_THRESHOLD)
         for pt in zip(*loc[::-1]):
             j = 0
             for size in sizeImages:
                 sizeRes = cv2.matchTemplate(screen, size, cv2.TM_CCOEFF_NORMED)
-                sizeLoc = numpy.where(sizeRes >= sizeThreshold)
+                sizeLoc = numpy.where(sizeRes >= SIZE_THRESHOLD)
                 zipSizes = zip(*sizeLoc[::-1])
                 for sizePt in zipSizes:
                     if (checkRange(pt, sizePt)):
@@ -119,54 +105,60 @@ def displayOrder(order, sizes):
 status = 0
 while True:
     start = time.time()
-    screen = numpy.array(ImageGrab.grab(bbox=frame_coords))
+    screen = numpy.array(ImageGrab.grab(bbox=FRAME_COORDS))
     screen = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
     order = []
     sizes = []
     findItems(screen, images, order, sizes)
     displayOrder(order, sizes)
     if (("Patty.png" in order or "Veggie.png" in order) and (status == 0)):
-        click(bottomBun[0], bottomBun[1])
-        time.sleep(buttonDelay)
+        bottomBun = imageToButton['bottomBun']
+        topBun = imageToButton['topBun']
+        sides = imageToButton['Sides']
+        click(bottomBun['x'], bottomBun['y'])
+        time.sleep(BUTTON_DELAY)
         i = 0
         for item in order:
             button = imageToButton[item]
             try:
                 if (sizes[i] == "x2.png"):
-                    click(button[0], button[1], count=2)
+                    click(button['x'], button['y'], count=2)
                 else:
-                    click(button[0], button[1])
+                    click(button['x'], button['y'])
             except:
                 # Default to 1
-                click(button[0], button[1])
-            time.sleep(buttonDelay)
+                click(button['x'], button['y'])
+            time.sleep(BUTTON_DELAY)
             i += 1
-        click(topBun[0], topBun[1])
-        time.sleep(buttonDelay)
-        click(sides[0], sides[1])
+        click(topBun['x'], topBun['y'])
+        time.sleep(BUTTON_DELAY)
+        click(sides['x'], sides['y'])
         status = 1
         drinkCheck = 0
     elif (("Ring.png" in order or "Sticks.png" in order or "Fry.png" in order) and status == 1):
         button = imageToButton[order[0]]
-        click(button[0], button[1])
-        time.sleep(buttonDelay)
+        drink = imageToButton['Drink']
+        click(button['x'], button['y'])
+        time.sleep(BUTTON_DELAY)
         size = imageToButton[sizes[0]]
-        click(size[0], size[1])
-        time.sleep(buttonDelay)
-        click(drink[0], drink[1])
+        click(size['x'], size['y'])
+        time.sleep(BUTTON_DELAY)
+        click(drink['x'], drink['y'])
         status = 2
     elif (("Drink.png" in order or "Juice.png" in order or "Shake.png" in order) and status == 2):
         button = imageToButton[order[0]]
-        click(button[0], button[1])
-        time.sleep(buttonDelay)
+        done = imageToButton['Done']
+        click(button['x'], button['y'])
+        time.sleep(BUTTON_DELAY)
         size = imageToButton[sizes[0]]
-        click(size[0], size[1])
-        time.sleep(buttonDelay)
-        click(done[0], done[1])
+        click(size['x'], size['y'])
+        time.sleep(BUTTON_DELAY)
+        click(done['x'], done['y'])
         status = 0
     elif (not("Drink.png" in order or "Juice.png" in order or "Shake.png" in order) and status == 2):
         drinkCheck += 1
+        done = imageToButton['Done']
         if (drinkCheck > 2):
-            click(done[0], done[1])
+            click(done['x'], done['y'])
             status = 0
-    time.sleep(frameDelay)
+    time.sleep(FRAME_DELAY)
