@@ -1,9 +1,11 @@
 from fileProcessing import processConfig, processButtons
 from directKeys import click
 from PIL import ImageGrab
+import keyboard
 import numpy
 import time
 import cv2
+import sys
 import os
 
 # Process config and buttonLocations yaml files
@@ -78,7 +80,8 @@ def displayOrder(order):
 
 status = 0
 while True:
-    start = time.time()
+    if (keyboard.is_pressed("esc")):
+        sys.exit()
     screen = numpy.array(ImageGrab.grab(bbox=configMap['FRAME_COORDS']))
     screen = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
     order = []
