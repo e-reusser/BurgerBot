@@ -6,18 +6,20 @@ import cv2
 import os
 import yaml
 
-# Frame coordinates, thresholds, and delays
-# These will typically vary based on machine
-FRAME_COORDS = [530, 200, 1400, 450]
-ITEM_THRESHOLD = .859
-SIZE_THRESHOLD = .925
-CHEESE_THRESHOLD = .8
-BUTTON_DELAY = 0.05
-FRAME_DELAY = 0.5
+# Frame coordinates, thresholds, and delays and their mappings
+# Can be found in config.yml
+with open('config.yml') as f:
+    configMap = yaml.safe_load(f)
+FRAME_COORDS = [configMap['frameCaptureCoordinates']['pos1'][0], configMap['frameCaptureCoordinates']['pos1'][1], configMap['frameCaptureCoordinates']['pos2'][0], configMap['frameCaptureCoordinates']['pos2'][1]]
+ITEM_THRESHOLD = configMap['itemThreshold']
+SIZE_THRESHOLD = configMap['sizeThreshold']
+CHEESE_THRESHOLD = configMap['cheeseThreshold']
+BUTTON_DELAY = configMap['buttonDelay']
+FRAME_DELAY = configMap['frameDelay']
 
+# Button locations and their mappings
 with open('buttonLocations.yml') as f:
     buttonMap = yaml.safe_load(f)
-
 imageToButton = {
     "Cheese.png": buttonMap['buttons']['ingredients']['cheese'],
     "Cheese1.png": buttonMap['buttons']['ingredients']['cheese'],
@@ -43,6 +45,7 @@ imageToButton = {
     "topBun": buttonMap['buttons']['ingredients']['topBun']
 }
 
+# Loading images for both menu items and sizes
 images = []
 menuFileNames = []
 menuFileCount = 0

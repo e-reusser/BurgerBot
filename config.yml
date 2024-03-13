@@ -1,0 +1,21 @@
+# Positions which mednu items appear between
+frameCaptureCoordinates:
+  pos1: [530, 200]
+  pos2: [1400, 450]
+
+# Threshold for image recognition of most menu items
+itemThreshold: 0.859
+
+# Threshold for image recognition of sizes
+sizeThreshold: 0.925
+
+# Specific threshold for image recognition of the cheese item
+# This is seperated due to consisting of a pale color, which
+# cannot be detected as accurately in grayscale
+cheeseThreshold: 0.8
+
+# Delay between click movements
+buttonDelay: 0.05
+
+# Delay between searching for new items
+frameDelay: 0.5
