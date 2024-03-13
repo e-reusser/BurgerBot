@@ -1,49 +1,14 @@
-import time
-import numpy
-from PIL import ImageGrab
+from fileProcessing import processConfig, processButtons
 from directKeys import click
+from PIL import ImageGrab
+import numpy
+import time
 import cv2
 import os
-import yaml
 
-# Frame coordinates, thresholds, and delays and their mappings
-# Can be found in config.yml
-with open('config.yml') as f:
-    configMap = yaml.safe_load(f)
-FRAME_COORDS = [configMap['frameCaptureCoordinates']['pos1'][0], configMap['frameCaptureCoordinates']['pos1'][1], configMap['frameCaptureCoordinates']['pos2'][0], configMap['frameCaptureCoordinates']['pos2'][1]]
-ITEM_THRESHOLD = configMap['itemThreshold']
-SIZE_THRESHOLD = configMap['sizeThreshold']
-CHEESE_THRESHOLD = configMap['cheeseThreshold']
-BUTTON_DELAY = configMap['buttonDelay']
-FRAME_DELAY = configMap['frameDelay']
-
-# Button locations and their mappings
-with open('buttonLocations.yml') as f:
-    buttonMap = yaml.safe_load(f)
-imageToButton = {
-    "Cheese.png": buttonMap['buttons']['ingredients']['cheese'],
-    "Cheese1.png": buttonMap['buttons']['ingredients']['cheese'],
-    "Cheese2.png": buttonMap['buttons']['ingredients']['cheese'],
-    "Drink.png": buttonMap['buttons']['secondary']['top'],
-    "Fry.png": buttonMap['buttons']['secondary']['top'],
-    "Juice.png": buttonMap['buttons']['secondary']['middle'],
-    "Lettuce.png": buttonMap['buttons']['ingredients']['lettuce'],
-    "Onion.png": buttonMap['buttons']['ingredients']['onion'],
-    "Patty.png": buttonMap['buttons']['ingredients']['patty'],
-    "Ring.png": buttonMap['buttons']['secondary']['bottom'],
-    "Sticks.png": buttonMap['buttons']['secondary']['middle'],
-    "Tomato.png": buttonMap['buttons']['ingredients']['tomato'],
-    "Veggie.png": buttonMap['buttons']['ingredients']['veggie'],
-    "Shake.png": buttonMap['buttons']['secondary']['bottom'],
-    "Small.png": buttonMap['buttons']['secondary']['small'],
-    "Medium.png": buttonMap['buttons']['secondary']['medium'],
-    "Large.png": buttonMap['buttons']['secondary']['large'],
-    "Sides": buttonMap['buttons']['menu']['sides'],
-    "Drink": buttonMap['buttons']['menu']['drink'],
-    "Done": buttonMap['buttons']['menu']['done'],
-    "bottomBun": buttonMap['buttons']['ingredients']['bottomBun'],
-    "topBun": buttonMap['buttons']['ingredients']['topBun']
-}
+# Process config and buttonLocations yaml files
+configMap = processConfig()
+imageToButton = processButtons()
 
 # Loading images for both menu items and sizes
 images = []
@@ -71,22 +36,22 @@ print("Loaded " + format(sizeCount) + " sizes.")
 def checkRange(pt, sizePt):
     return ((0 <= (sizePt[0] - pt[0]) <= 80) and (0 <= (sizePt[1] - pt[1]) <= 80))
 
-def findItems(screen, images, order, sizes):
+def findItems(screen, images, order):
     i = 0
     cheeseCheck = False
     for image in images:
         res = cv2.matchTemplate(screen, image, cv2.TM_CCOEFF_NORMED)
         if ("Cheese" in menuFileNames[i]):
-            threshold = CHEESE_THRESHOLD
+            threshold = configMap['CHEESE_THRESHOLD']
         else:
-            threshold = ITEM_THRESHOLD
+            threshold = configMap['ITEM_THRESHOLD']
         loc = numpy.where(res >= threshold)
         for pt in zip(*loc[::-1]):
             j = 0
             foundSize = "1x.jpg"
             for size in sizeImages:
                 sizeRes = cv2.matchTemplate(screen, size, cv2.TM_CCOEFF_NORMED)
-                sizeLoc = numpy.where(sizeRes >= SIZE_THRESHOLD)
+                sizeLoc = numpy.where(sizeRes >= configMap['SIZE_THRESHOLD'])
                 zipSizes = zip(*sizeLoc[::-1])
                 for sizePt in zipSizes:
                     if (checkRange(pt, sizePt)):
@@ -101,7 +66,7 @@ def findItems(screen, images, order, sizes):
             break
         i += 1
 
-def displayOrder(order, sizes):
+def displayOrder(order):
     print("Full Order:")
     i = 0
     for item in order:
@@ -114,12 +79,11 @@ def displayOrder(order, sizes):
 status = 0
 while True:
     start = time.time()
-    screen = numpy.array(ImageGrab.grab(bbox=FRAME_COORDS))
+    screen = numpy.array(ImageGrab.grab(bbox=configMap['FRAME_COORDS']))
     screen = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
     order = []
-    sizes = []
-    findItems(screen, images, order, sizes)
-    displayOrder(order, sizes)
+    findItems(screen, images, order)
+    displayOrder(order)
     foundType = 0
     for item in order:
         if ("Patty.png" in item or "Veggie.png" in item):
@@ -133,7 +97,7 @@ while True:
         topBun = imageToButton['topBun']
         sides = imageToButton['Sides']
         click(bottomBun['x'], bottomBun['y'])
-        time.sleep(BUTTON_DELAY)
+        time.sleep(configMap['BUTTON_DELAY'])
         for item in order:
             button = imageToButton[item[0]]
             try:
@@ -144,9 +108,9 @@ while True:
             except:
                 # Default to 1
                 click(button['x'], button['y'])
-            time.sleep(BUTTON_DELAY)
+            time.sleep(configMap['BUTTON_DELAY'])
         click(topBun['x'], topBun['y'])
-        time.sleep(BUTTON_DELAY)
+        time.sleep(configMap['BUTTON_DELAY'])
         click(sides['x'], sides['y'])
         status = 1
         drinkCheck = 0
@@ -154,20 +118,20 @@ while True:
         button = imageToButton[order[0][0]]
         drink = imageToButton['Drink']
         click(button['x'], button['y'])
-        time.sleep(BUTTON_DELAY)
+        time.sleep(configMap['BUTTON_DELAY'])
         size = imageToButton[order[0][1]]
         click(size['x'], size['y'])
-        time.sleep(BUTTON_DELAY)
+        time.sleep(configMap['BUTTON_DELAY'])
         click(drink['x'], drink['y'])
         status = 2
     elif ((foundType == 3) and status == 2):
         button = imageToButton[order[0][0]]
         done = imageToButton['Done']
         click(button['x'], button['y'])
-        time.sleep(BUTTON_DELAY)
+        time.sleep(configMap['BUTTON_DELAY'])
         size = imageToButton[order[0][1]]
         click(size['x'], size['y'])
-        time.sleep(BUTTON_DELAY)
+        time.sleep(configMap['BUTTON_DELAY'])
         click(done['x'], done['y'])
         status = 0
     elif ((foundType == 0) and status == 2):
@@ -176,4 +140,4 @@ while True:
         if (drinkCheck > 2):
             click(done['x'], done['y'])
             status = 0
-    time.sleep(FRAME_DELAY)
+    time.sleep(configMap['FRAME_DELAY'])
